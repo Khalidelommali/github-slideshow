@@ -1,0 +1,259 @@
+# Creating a complete HTML/CSS/JS project, zipping it, and providing a download link for the user.
+from pathlib import Path
+import zipfile, os, json, textwrap
+
+project_name = "professional-landing-ar"
+base = Path("/mnt/data") / project_name
+if base.exists():
+    # Remove existing files to overwrite fresh
+    for p in base.rglob("*"):
+        if p.is_file():
+            p.unlink()
+        else:
+            try:
+                p.rmdir()
+            except Exception:
+                pass
+else:
+    base.mkdir(parents=True, exist_ok=True)
+
+# Files content (Arabic RTL professional landing page)
+index_html = """<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>مشروع احترافي — Khalid El Ommali</title>
+  <meta name="description" content="صفحة هبوط احترافية جاهزة للنشر على Vercel أو GitHub Pages." />
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#">Khalid El Ommali</a>
+      <nav class="nav" id="nav">
+        <a href="#home">الرئيسية</a>
+        <a href="#features">المميزات</a>
+        <a href="#about">عن المشروع</a>
+        <a href="#contact">تواصل</a>
+      </nav>
+      <button id="menuToggle" class="menu-toggle" aria-label="قائمة">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="container hero-inner">
+        <div class="hero-content">
+          <h1>صفحة هبوط احترافية وجاهزة للنشر</h1>
+          <p class="lead">قالب بسيط، أنيق، وسريع التحميل — مناسب للعرض الشخصي أو لمشروعك. قابل للتوسيع بسهولة.</p>
+          <div class="hero-cta">
+            <a class="btn primary" href="#features">ابدأ الآن</a>
+            <a class="btn ghost" href="https://github.com/Khalidelommali/github-slideshow" target="_blank" rel="noopener">المستودع</a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <svg viewBox="0 0 600 400" class="illustration"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-opacity="1" stop-color="#4f46e5"/><stop offset="1" stop-color="#06b6d4" stop-opacity="1"/></linearGradient></defs><rect rx="20" width="100%" height="100%" fill="url(#g)"></rect></svg>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <div class="container">
+        <h2 class="section-title">المميزات</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>تصميم حديث</h3>
+            <p>واجهة واضحة، خطوط قابلة للقراءة، وتماسك بصري مناسب للغة العربية.</p>
+          </article>
+          <article class="card">
+            <h3>جاهز للنشر</h3>
+            <p>ملفات ثابتة HTML/CSS/JS، يمكن نشرها على Vercel أو GitHub Pages مباشرة.</p>
+          </article>
+          <article class="card">
+            <h3>أداء سريع</h3>
+            <p>تصميم بسيط يقلل الطلبات ويدعم التحميل السريع على شبكات بطيئة.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="about">
+      <div class="container">
+        <h2 class="section-title">عن المشروع</h2>
+        <p>هذا مشروع مُبسّط لتحويل مستودعك إلى موقع إنترنت احترافي. يتضمن ملفات قابلة للتعديل بسرعة لتتناسب مع العرض الشخصي أو المشروع التجاري.</p>
+        <ul class="list">
+          <li>ملف index.html (الصفحة الرئيسية)</li>
+          <li>styles.css (تصميم مخصص وRTL)</li>
+          <li>script.js (تفاعلات بسيطة)</li>
+          <li>vercel.json (تعطيل build على Vercel)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="contact" class="contact">
+      <div class="container">
+        <h2 class="section-title">تواصل</h2>
+        <p>هل تريد تخصيص الموقع أو نشره؟ يمكنك التواصل عبر GitHub أو طلب تعديل مباشر.</p>
+        <a class="btn primary" href="mailto:khalid@example.com">أرسل رسالة</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© <span id="year"></span> Khalid El Ommali — جميع الحقوق محفوظة.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+"""
+
+styles_css = """
+:root{
+  --bg:#0f172a;
+  --card:#0b1220;
+  --muted:#9aa7bf;
+  --accent1:#4f46e5;
+  --accent2:#06b6d4;
+  --white:#ffffff;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body.page{
+  margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Arabic", "Segoe UI Historic", "Arial", sans-serif;
+  background:linear-gradient(180deg, #081026 0%, #071023 100%);
+  color:var(--white);direction:rtl;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+
+.container{max-width:1100px;margin:0 auto;padding:20px}
+
+.site-header{position:sticky;top:0;background:rgba(7,10,20,0.6);backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,0.03)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px}
+.brand{font-weight:700;text-decoration:none;color:var(--white);font-size:1.05rem}
+.nav{display:flex;gap:14px}
+.nav a{color:var(--muted);text-decoration:none;padding:8px;border-radius:8px}
+.nav a:hover{color:var(--white);background:rgba(255,255,255,0.03)}
+
+.menu-toggle{display:none;background:none;border:0;color:var(--white);font-size:1.4rem;padding:6px}
+
+.hero{padding:60px 0}
+.hero-inner{display:flex;gap:40px;align-items:center;flex-wrap:wrap}
+.hero-content{flex:1;min-width:280px}
+.hero h1{margin:0 0 12px;font-size:2.1rem;line-height:1.05}
+.lead{color:var(--muted);margin-bottom:18px}
+
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:600}
+.btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:var(--white);box-shadow:0 6px 20px rgba(79,70,229,0.15)}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--white)}
+
+.hero-visual{width:360px;height:220px;border-radius:14px;overflow:hidden;flex:0 0 360px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+
+.section-title{font-size:1.4rem;margin-bottom:18px}
+
+.features{padding:40px 0;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;min-height:120px}
+.card h3{margin:0 0 8px}
+.card p{margin:0;color:var(--muted)}
+
+.about{padding:40px 0}
+.list{margin-top:12px;color:var(--muted)}
+
+.contact{padding:40px 0;background:linear-gradient(180deg, transparent, rgba(255,255,255,0.01))}
+
+.site-footer{padding:20px 0;border-top:1px solid rgba(255,255,255,0.02);text-align:center;color:var(--muted)}
+
+/* Responsive */
+@media (max-width:900px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .hero-visual{flex-basis:100%}
+}
+@media (max-width:640px){
+  .nav{display:none}
+  .menu-toggle{display:inline-block}
+  .grid{grid-template-columns:1fr}
+  .header-inner{gap:12px}
+  .hero h1{font-size:1.6rem}
+}
+"""
+
+script_js = """
+// Simple interactivity: menu toggle and year injection
+document.addEventListener('DOMContentLoaded', function(){
+  var menu = document.getElementById('nav');
+  var toggle = document.getElementById('menuToggle');
+  if(toggle){
+    toggle.addEventListener('click', function(){
+      if(menu.style.display === 'flex') menu.style.display = 'none';
+      else menu.style.display = 'flex';
+    });
+  }
+  var y = document.getElementById('year');
+  if(y) y.textContent = new Date().getFullYear();
+});
+"""
+
+vercel_json = json.dumps({"buildCommand": "", "outputDirectory": "."}, ensure_ascii=False, indent=2)
+
+readme_md = """# Professional Landing Page (Arabic, RTL)
+
+This project converts your `github-slideshow` repository into a modern, responsive static landing page in Arabic (RTL).
+Files included:
+- `index.html` — main page (RTL Arabic).
+- `styles.css` — modern styling, responsive.
+- `script.js` — small JS for interactions.
+- `vercel.json` — instruct Vercel to skip build and serve static files.
+- `README.md` — this file.
+
+## How to deploy
+
+### Deploy to Vercel
+1. Connect your GitHub repository to Vercel.
+2. Make sure these files are in the repo root.
+3. Vercel will auto-deploy (no build). If not, set Build Command to empty and Output Directory to `.` in project settings.
+
+### Deploy to GitHub Pages
+1. Go to repository → Settings → Pages → Source: `main` branch / `/ (root)`.
+2. Save. GitHub Pages will serve `index.html` from root.
+
+---
+تم الإنشاء تلقائياً بواسطة مساعد ChatGPT — الإصدار المخصص لمشروعك.
+"""
+
+# Write files
+files = {
+    "index.html": index_html,
+    "styles.css": styles_css,
+    "script.js": script_js,
+    "vercel.json": vercel_json,
+    "README.md": readme_md
+}
+
+for name, content in files.items():
+    path = base / name
+    path.write_text(content, encoding="utf-8")
+
+# Create a zip archive
+zip_path = Path("/mnt/data") / f"{project_name}.zip"
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+    for name in files:
+        zf.write(base / name, arcname=name)
+
+print("Created project at:", str(base))
+print("Created zip at:", str(zip_path))
+
+# Show files list for user
+for p in sorted(base.iterdir()):
+    print("-", p.name)
+
+# Provide path to download
+zip_path_str = str(zip_path)
+zip_path_str
+
